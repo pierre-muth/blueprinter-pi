@@ -1,4 +1,4 @@
-package piprint;
+package tests;
 // START SNIPPET: serial-snippet
 
 
