@@ -24,9 +24,10 @@ public class DitheredImage {
 
 		int imgH = img.getHeight();
 		int imgW = img.getWidth();
-		resizedImageLength = imgW / (imgH / resizedImageWidth);
+		double ratio = (double)imgH / (double)resizedImageWidth;
+		resizedImageLength = (int) ((double)imgW / ratio);
 
-		final BufferedImage monoImageresized = new BufferedImage(resizedImageLength, 384, BufferedImage.TYPE_BYTE_GRAY);
+		final BufferedImage monoImageresized = new BufferedImage(resizedImageLength, resizedImageWidth, BufferedImage.TYPE_BYTE_GRAY);
 		Graphics2D g = monoImageresized.createGraphics();
 		g.drawImage(img, 0, 0, resizedImageLength, resizedImageWidth, null);
 		g.dispose();

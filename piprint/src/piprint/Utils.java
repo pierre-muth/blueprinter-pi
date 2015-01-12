@@ -34,4 +34,13 @@ public class Utils {
 		
 		return new String(bitChars);
 	}
+	
+	public static int countBitOn(byte aByte) {
+		int count = 0;
+		for (int i = 0; i < 8; i++) {
+			if ( ((aByte >>> i) & 0b00000001) == 1  )
+				count++;
+		}
+		return count;
+	}
 }
