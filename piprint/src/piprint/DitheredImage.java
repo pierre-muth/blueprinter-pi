@@ -32,8 +32,8 @@ public class DitheredImage {
 		g.drawImage(img, 0, 0, resizedImageLength, resizedImageWidth, null);
 		g.dispose();
 
-		final BufferedImage monoImagerotated = new BufferedImage(resizedImageWidth, resizedImageLength, BufferedImage.TYPE_BYTE_GRAY);
-		g = monoImagerotated.createGraphics();
+		final BufferedImage monoImageRotated = new BufferedImage(resizedImageWidth, resizedImageLength, BufferedImage.TYPE_BYTE_GRAY);
+		g = monoImageRotated.createGraphics();
 		g.rotate(Math.PI/2);
 		g.drawImage(monoImageresized, 0, -resizedImageWidth, resizedImageLength, resizedImageWidth, null);
 		g.dispose();
@@ -41,34 +41,26 @@ public class DitheredImage {
 		int[] pixList = new int[resizedImageLength * resizedImageWidth ];
 		int[][] pixArray2D = new int[resizedImageWidth][resizedImageLength];
 		int[][] pixArray2Ddest = new int[resizedImageWidth][resizedImageLength];
-		int S_WIDTH = resizedImageWidth;
-		int S_HEIGHT = resizedImageLength;
 
-		monoImagerotated.getData().getPixels(0, 0, resizedImageWidth, resizedImageLength, pixList);
+		monoImageRotated.getData().getPixels(0, 0, resizedImageWidth, resizedImageLength, pixList);
 
 		for (int i = 0; i < pixList.length; i++) {
-			pixArray2D[i%S_WIDTH][i/S_WIDTH] = (int) ((pixList[i]));
-			pixArray2Ddest[i%S_WIDTH][i/S_WIDTH] = 0;
+			pixArray2D[i%resizedImageWidth][i/resizedImageWidth] = (int) ((pixList[i]));
+			pixArray2Ddest[i%resizedImageWidth][i/resizedImageWidth] = 0;
 		}
 
-		int width = S_WIDTH;
-		int height = S_HEIGHT;
 		int oldpixel, newpixel, error;
-		boolean nbottom, nleft, nright, nright2;
+		boolean nbottom, nleft, nright;
 
-		for (int y=0; y<height; y++) {
-			nbottom=y<height-1;
-			for (int x=0; x<width; x++) {
+		for (int y=0; y<resizedImageLength; y++) {
+			nbottom=y<resizedImageLength-1;
+			for (int x=0; x<resizedImageWidth; x++) {
 				nleft = x>0; 
-				nright = x<width-1;
-				nright2 = x<width-2;
-
+				nright = x<resizedImageWidth-1;
 				oldpixel = pixArray2Ddest[x][y] + pixArray2D[x][y];
 
-				if (oldpixel<128) 
-					newpixel = 0;
-				else 
-					newpixel = 255;
+				if (oldpixel<128) newpixel = 0;
+				else newpixel = 255;
 
 				pixArray2Ddest[x][y] = newpixel;
 				error = oldpixel-newpixel;
@@ -77,15 +69,14 @@ public class DitheredImage {
 				if (nleft&&nbottom) pixArray2Ddest[x-1][y+1]+= 3*error/16;
 				if (nbottom) 		pixArray2Ddest[x][y+1] 	+= 5*error/16;   
 				if (nright&&nbottom)pixArray2Ddest[x+1][y+1]+=   error/16;
-
 			}
 		}
 
 		for (int i = 0; i < pixList.length; i++) {
-			pixList[i]  = pixArray2Ddest[i%S_WIDTH][i/S_WIDTH];
+			pixList[i]  = pixArray2Ddest[i%resizedImageWidth][i/resizedImageWidth];
 		}
 
-		result = new byte[(resizedImageWidth/8)*S_HEIGHT];
+		result = new byte[(resizedImageWidth/8)*resizedImageLength];
 		int mask = 0x01;
 		for (int i = 0; i < result.length; i++) {
 			for (int j = 0; j < 8; j++) {
