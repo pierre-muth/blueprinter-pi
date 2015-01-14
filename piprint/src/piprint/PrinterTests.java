@@ -22,9 +22,9 @@ public class PrinterTests {
 		ThermalPrinter printer = new ThermalPrinter();
 //		printer.configPrinterWithDefault();
 		PrinterConfig pc = new PrinterConfig();
-		pc.heatingMaxDot = 11;
+		pc.heatingMaxDot = 7;
 		pc.heatTime = (byte) 60;
-		pc.heatInterval = (byte) 60;
+		pc.heatInterval = (byte) 250;
 		
 		pc.printDensity = 14;
 		pc.printBreakTime = 0;
