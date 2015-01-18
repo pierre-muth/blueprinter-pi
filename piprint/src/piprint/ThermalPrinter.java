@@ -8,7 +8,6 @@ import com.pi4j.io.serial.Serial;
 import com.pi4j.io.serial.SerialFactory;
 
 public class ThermalPrinter {
-	private static final long BYTE_SENDING_TIME = 800000; // ns
 	static final byte ESC = 27;
 	static final byte _7 = 55;
 	static final byte DC2 = 18;
@@ -34,13 +33,21 @@ public class ThermalPrinter {
 	}
 
 	public void printImage(byte[] img, int width, int length) {
+		if (isPrinting()) return;
 		pit = new PrintImageThread(img, width, length);
 		pit.start();
 	}
 
 	public void printImage(DitheredImage image) {
+		if (isPrinting()) return;
 		pit = new PrintImageThread(image);
 		pit.start();
+	}
+	
+	public void printImage(String file) {
+		if (isPrinting()) return;
+		DitheredImage imageToPrint = new DitheredImage(file, 128, 384);
+		this.printImage(imageToPrint);;
 	}
 
 	public boolean isPrinting() {
@@ -89,7 +96,7 @@ public class ThermalPrinter {
 		}
 
 		public PrintImageThread(DitheredImage image) {
-			this.imageBytes = image.getImageInBytes();
+			this.imageBytes = image.getImageInBytesForPrint();
 			this.width = image.getImageWidth();
 			this.length = image.getImageLength();
 			hold.set(false);
@@ -105,7 +112,7 @@ public class ThermalPrinter {
 			byte[] printLineCommand ;
 			int bitONCount = 0;
 			int heatingStepsCount = 0;
-			int heatingTimeNs = 0;
+			int heatingTimeUs = 0;
 			int heatingDotsMax = ((ThermalPrinter.this.printerConfig.heatingMaxDot +1) *8);
 			
 			System.out.println("Printer: start print bitmap");
@@ -148,30 +155,39 @@ public class ThermalPrinter {
 				System.out.print(heatingStepsCount);
 				
 				switch (heatingStepsCount) {
-				case 0:
-					heatingTimeNs = 1800000;
-					break;
+//				case 0:
+//					heatingTimeUs = 1000;
+//					break;
 				case 1:
-					heatingTimeNs = 2700000;
+					heatingTimeUs = 2000;
 					break;
 				case 2:
-					heatingTimeNs = 7200000;
+					heatingTimeUs = 4800;
 					break;
 				case 3:
-					heatingTimeNs = 12000000;
+					heatingTimeUs = 10000;
 					break;
 				case 4:
-					heatingTimeNs = 15000000;
+					heatingTimeUs = 15000;
+					break;
+				case 5:
+					heatingTimeUs = 20000;
+					break;
+				case 6:
+					heatingTimeUs = 25000;
 					break;
 				default:
-					heatingTimeNs = 15000000;
+					heatingTimeUs = 0;
 					break;
 				}
 				
-				start = System.nanoTime();
-				do {
-					end = System.nanoTime();
-				} while(start + (heatingTimeNs) >= end);
+				if (heatingTimeUs > 0) {
+					start = System.nanoTime();
+					do {
+						end = System.nanoTime();
+					} while(start + (heatingTimeUs*1000) >= end);
+					
+				}
 				
 			}
 			

@@ -1,15 +1,16 @@
 package piprint;
 
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.*;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-
 
 public class PrinterTests {
 
@@ -19,17 +20,21 @@ public class PrinterTests {
 
 		System.out.println("BluePrinter-Pi Test");
 		
-		ThermalPrinter printer = new ThermalPrinter();
-//		printer.configPrinterWithDefault();
+		VFDscreen screen = new VFDscreen();
+		screen.display("basel.jpg");
+		
 		PrinterConfig pc = new PrinterConfig();
 		pc.heatingMaxDot = 7;
 		pc.heatTime = (byte) 60;
 		pc.heatInterval = (byte) 250;
-		
 		pc.printDensity = 14;
 		pc.printBreakTime = 0;
 		
+		ThermalPrinter printer = new ThermalPrinter();
 		printer.configPrinter(pc);
+//		printer.printImage("family.jpg");
+		
+		/*
 		
 		try {
 			watcher = FileSystems.getDefault().newWatchService();
@@ -38,7 +43,7 @@ public class PrinterTests {
 		}
 		Path dir = Paths.get("/home/pi/project/piprint/bin/piprint");
 		try {
-			key = dir.register(watcher, ENTRY_CREATE);
+			key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -71,6 +76,8 @@ public class PrinterTests {
 				return;
 			}
 		}
+		
+		*/
 		
 	}
 
