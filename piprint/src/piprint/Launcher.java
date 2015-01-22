@@ -23,30 +23,36 @@ public class Launcher {
 	WatchService watcher = null; 
 	WatchKey key = null;
 	VFDscreen screen;
-	ThermalPrinter printer;
+	ThermalPrinter2 printer;
 	String fileToPrint;
 	GpioController gpio;
 	GpioPinDigitalInput printButton;
+	GpioPinDigitalInput printerMotor;
 
 	public Launcher () {
-		//init button
+		//init button and Printer motor input
 		gpio = GpioFactory.getInstance();
 		printButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_04, PinPullResistance.PULL_DOWN);
 		printButton.addListener(new ButtonListener());
+		printerMotor = gpio.provisionDigitalInputPin(RaspiPin.GPIO_03, PinPullResistance.OFF);
+		printerMotor.addListener(new MotorListener());
 
 		screen = new VFDscreen();
 		screen.display("piprintlogo.png");
-		
-		PrinterConfig pc = new PrinterConfig();
-		pc.heatingMaxDot = 7;
-		pc.heatTime = (byte) 60;
-		pc.heatInterval = (byte) 250;
-		pc.printDensity = 14;
-		pc.printBreakTime = 0;
-		
-		printer = new ThermalPrinter();
-		printer.configPrinter(pc);
 
+		PrinterConfig pc = new PrinterConfig();
+		pc.heatingMaxDot = 11;
+		pc.heatTime = (byte) 70;
+		pc.heatInterval = (byte) 250;
+		pc.printDensity = 0;
+		pc.printBreakTime = 0;
+
+		printer = new ThermalPrinter2();
+		printer.configPrinter(pc);
+		
+		fileToPrint = "friend.jpg"; //default for test
+
+		// file whatching on a defalut folder, have to change it
 		try {
 			watcher = FileSystems.getDefault().newWatchService();
 		} catch (IOException e1) {
@@ -83,24 +89,31 @@ public class Launcher {
 	}
 
 	public static void main(String[] args) {
-		System.out.println("BluePrinter-Pi Test");
+		System.out.println("Pi-Print Test");
 		new Launcher();
 	}
 
 
 	class ButtonListener implements GpioPinListenerDigital {
-		
 		@Override
 		public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
 			if (event.getState().isLow()) return;
-			System.out.println("pressed !");
-			
+			System.out.println("Print button pressed !");
+
 			if (printer != null && fileToPrint != null) {
 				printer.printImage(fileToPrint);
 			}
-			
-			
+
+
 		}
-}
+	}
+	
+	class MotorListener implements GpioPinListenerDigital {
+		@Override
+		public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
+			//got a new printed line
+			printer.motorStep();
+		}
+	}
 
 }

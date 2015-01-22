@@ -25,8 +25,7 @@ public class VFDscreen {
 			displayThread.start();
 		}
 	}
-
-
+	
 	private class DisplayImageThread extends Thread {
 		private int width, length;
 		private byte[] imageLow, imageHight;
@@ -42,8 +41,6 @@ public class VFDscreen {
 			this.imageHight = images[1];
 			this.width = image.getImageWidth();
 			this.length = image.getImageLength();
-
-			System.out.println("width:"+width+", lenght:"+length);
 		}
 
 		@Override

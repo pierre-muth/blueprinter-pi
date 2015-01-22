@@ -118,7 +118,7 @@ public class DitheredImage {
 		BufferedImage img = null;
 		try {
 			img = ImageIO.read(DitheredImage.class.getResource(imageFileName));
-		} catch (IOException e) { }
+		} catch (Exception e) { }
 		
 		if(img == null) {
 			return null;

@@ -1,4 +1,4 @@
-package piprint;
+package tests;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
@@ -11,6 +11,10 @@ import java.nio.file.Paths;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+
+import piprint.PrinterConfig;
+import piprint.ThermalPrinter;
+import piprint.VFDscreen;
 
 public class PrinterTests {
 

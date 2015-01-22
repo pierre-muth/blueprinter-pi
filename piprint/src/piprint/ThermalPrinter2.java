@@ -3,17 +3,12 @@ package piprint;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.pi4j.io.serial.Serial;
 import com.pi4j.io.serial.SerialFactory;
 
-/**
- * First test with the A2 thermal printer
- * Attempt to estimate the printing delay 
- * with the black dots count.
- */
-
-public class ThermalPrinter {
+public class ThermalPrinter2 {
 	static final byte ESC = 27;
 	static final byte _7 = 55;
 	static final byte DC2 = 18;
@@ -22,7 +17,7 @@ public class ThermalPrinter {
 	private PrintImageThread pit;
 	private PrinterConfig printerConfig;
 
-	public ThermalPrinter() {
+	public ThermalPrinter2() {
 		serial = SerialFactory.createInstance();
 		serial.open(Serial.DEFAULT_COM_PORT, 115200);
 	}
@@ -49,7 +44,7 @@ public class ThermalPrinter {
 		pit = new PrintImageThread(image);
 		pit.start();
 	}
-	
+
 	public void printImage(String file) {
 		if (isPrinting()) return;
 		DitheredImage imageToPrint = new DitheredImage(file, 128, 384);
@@ -58,6 +53,12 @@ public class ThermalPrinter {
 
 	public boolean isPrinting() {
 		return pit != null && pit.isAlive();
+	}
+
+	public void motorStep() {
+		if (isPrinting()) {
+			pit.addOnePrintedLine();
+		}
 	}
 
 	private class PrinterConfigThread extends Thread {
@@ -93,7 +94,8 @@ public class ThermalPrinter {
 		private byte[] imageBytes;
 		private int width, length;
 		private AtomicBoolean hold = new AtomicBoolean();
-		
+		private AtomicInteger linePrinted = new AtomicInteger(0);
+
 		public PrintImageThread(byte[] img, int width, int length) {
 			this.imageBytes = img;
 			this.length = length;
@@ -107,20 +109,15 @@ public class ThermalPrinter {
 			this.length = image.getImageLength();
 			hold.set(false);
 		}
-		public void hold() {
-			hold.set(true);
+
+		public void addOnePrintedLine() {
+			linePrinted.incrementAndGet();
 		}
 
 		@Override
 		public void run () {
-			long start;
-			long end;
 			byte[] printLineCommand ;
-			int bitONCount = 0;
-			int heatingStepsCount = 0;
-			int heatingTimeUs = 0;
-			int heatingDotsMax = ((ThermalPrinter.this.printerConfig.heatingMaxDot +1) *8);
-			
+
 			System.out.println("Printer: start print bitmap");
 
 			try {
@@ -128,81 +125,47 @@ public class ThermalPrinter {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-	
-			for (int i = 0; i < length; i++) {
-				
-				if (i%255 == 0) {
-					int remainingLines = length-i;
+
+			for (int lineSent = 0; lineSent < length; lineSent++) {
+
+				if (lineSent%255 == 0) {
+					int remainingLines = length-lineSent;
 					if (remainingLines > 255) remainingLines = 255;
 					printLineCommand = new byte[] {0x12, 0x2A, (byte) remainingLines, 48};
-					
+
 					for (int j = 0; j < printLineCommand.length; j++) {
-						start = System.nanoTime();
 						serial.write(printLineCommand[j]);
 					}
 				}
-				
-				bitONCount = heatingDotsMax -1;
-				heatingStepsCount = 0;
-				
+
 				for (int j = 0; j < 48; j++) {
-					byte imageByte = imageBytes[(i*48)+j];
-					
+					byte imageByte = imageBytes[(lineSent*48)+j];
 					serial.write(imageByte);
+				}
+
+				System.out.println("Line sent: "+lineSent+", linePrinted: "+linePrinted.get());
+
+				if (lineSent > 50) {
 					
-					bitONCount += Utils.countBitOn(imageByte);
-					
-					if (bitONCount >= heatingDotsMax) {
-						bitONCount = 0;
-						heatingStepsCount++;
+					int i=0;
+					while ( (lineSent - linePrinted.get()) > 80 && i < 20) {
+						try { 
+							sleep(1);	
+							i++;
+							System.out.print(".");
+						} catch (InterruptedException e) {	}
 					}
-				}
-				
-				System.out.print(heatingStepsCount);
-				
-				switch (heatingStepsCount) {
-//				case 0:
-//					heatingTimeUs = 1000;
-//					break;
-				case 1:
-					heatingTimeUs = 2000;
-					break;
-				case 2:
-					heatingTimeUs = 4800;
-					break;
-				case 3:
-					heatingTimeUs = 10000;
-					break;
-				case 4:
-					heatingTimeUs = 15000;
-					break;
-				case 5:
-					heatingTimeUs = 20000;
-					break;
-				case 6:
-					heatingTimeUs = 25000;
-					break;
-				default:
-					heatingTimeUs = 0;
-					break;
-				}
-				
-				if (heatingTimeUs > 0) {
-					start = System.nanoTime();
-					do {
-						end = System.nanoTime();
-					} while(start + (heatingTimeUs*1000) >= end);
 					
 				}
-				
+
 			}
-			
+
 			try {
-				sleep(500);
+				sleep(100);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			
+
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
 			String date = sdf.format(new Date());
 
