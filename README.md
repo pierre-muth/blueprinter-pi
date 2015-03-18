@@ -2,6 +2,7 @@
 # Resulting device #
 
 What about a simple autonomous printer, on wish you can easily send a picture from your smartphone via Bluetooth ?
+
 <a href='http://www.youtube.com/watch?feature=player_embedded&v=CMH58jxgLjI' target='_blank'><img src='http://img.youtube.com/vi/CMH58jxgLjI/0.jpg' width='425' height=344 /></a>
 
 # Code Decription #
